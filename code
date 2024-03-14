@@ -1,0 +1,96 @@
+faqs = """Aim is the guiding beacon that directs our efforts, aspirations, and endeavors toward aparticular goal or objective.
+It serves as a compass, providing clarity and purpose to our actions,ensuring that we navigate through life with intentionality and determination.
+A clear aim not onlyprovides motivation but also helps in prioritizing tasks and making decisions that align with our desired outcomes.
+Whether in personal growth, academic pursuits, or professional endeavors, having a well-defined aim gives us a sense of direction and empowers us to channel our energy effectively.
+It serves as a constant reminder of what we strive for, driving us forward even in the face of challenges and obstacles.
+Ultimately, our aim shapes our journey and contributes significantly to our fulfillment and success in life.
+Aim is the cornerstone of progress, the driving force behind every endeavor, big or small.
+It acts as a beacon of light in thevast sea of possibilities, illuminating the path we choose to traverse.
+With a clear aim in mind,we are equipped with purpose and determination, ready to chart our course and overcome any hurdles that may arise.
+It provides focus amidst the chaos, guiding our actions with intentionality and clarity of vision.
+Whether aiming for personal growth, professional success, or societal change, our aspirations shape our journey and define our legacy.
+Aim ignites the spark of ambition within us, fueling our drive to reach greater heights and fulfill our potential.
+In its absence, we risk drifting aimlessly, lost in the currents of uncertainty.
+But with a steadfast aim, we navigate through life with purpose, turning dreams into reality and carving our own path to fulfillment."""
+
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([faqs])
+len(tokenizer.word_index)
+
+#TO GET THE NUMBERS OF WORDS
+# print(token.word_index)
+
+# making input data
+# input_sequences = []
+# for sentenses in faqs.split('\n'):
+#     ts=token.texts_to_sequences([sentenses])[0]
+
+#     for i in range(1,len(ts)):
+#         input_sequences.append(ts[:i+1])
+
+input_sequences = []
+for sentence in faqs.split('\n'):
+  tokenized_sentence = tokenizer.texts_to_sequences([sentence])[0]
+
+  for i in range(1,len(tokenized_sentence)):
+    input_sequences.append(tokenized_sentence[:i+1])
+
+max_len = max([len(x) for x in input_sequences])
+# print(maee)
+
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+padded_input_sequences = pad_sequences(input_sequences, maxlen = max_len, padding='pre')
+# print(pis)
+
+X = padded_input_sequences[:,:-1]
+y = padded_input_sequences[:,-1]
+print(X.shape)
+
+from tensorflow.keras.utils import to_categorical
+y = to_categorical(y,num_classes =152)
+
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+model = Sequential()
+model.add(Embedding(152, 80, input_length=27))  # Replace X.shape[1] with the correct length, which is 27
+model.add(LSTM(150))
+model.add(Dense(152, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy', optimizer='adam',metrics = 'accuracy')
+
+model.fit(X,y,epochs=100)
+
+# text = "It acts as"
+
+# for i in range(5):
+#  token_text = token.texts_to_sequences([text])[0]
+#  ptt= pad_sequences([token_text],maxlen = 27, padding = 'pre')
+#  pos = np.argmax(model.predict(ptt))
+
+#  for word,index in token.word_index.items():
+#     if index == pos :
+#        texr = text + " " + word
+#        print(text)
+
+import time
+text = "It serves as"
+
+for i in range(10):
+  # tokenize
+  token_text = tokenizer.texts_to_sequences([text])[0]
+  # padding
+  padded_token_text = pad_sequences([token_text], maxlen=27, padding='pre')
+  # predict
+  pos = np.argmax(model.predict(padded_token_text))
+
+  for word,index in tokenizer.word_index.items():
+    if index == pos:
+      text = text + " " + word
+      print(text)
+      time.sleep(2)
